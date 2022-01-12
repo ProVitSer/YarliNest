@@ -22,7 +22,7 @@ export enum RequestMethodType {
     delete = 'DELETE'
 }
 
-export interface EqwidRequestConfigInterface {
+export interface RequestConfigInterface {
     host: string;
     path: string;
     method: RequestMethodType;
