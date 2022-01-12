@@ -400,4 +400,5 @@ dist
 #Custom
 config.json
 api-log
-src/config/config.ts
+src/config/*.js
+src/config/*.json
