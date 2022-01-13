@@ -8,7 +8,7 @@ import { Builder, By, until } from 'selenium-webdriver';
 import * as login from '../config/config3cx';
 
 @Injectable()
-export class SeleniumService implements OnApplicationBootstrap{
+export class SeleniumService {
 
     constructor(
         private readonly configService: ConfigService,
@@ -16,24 +16,6 @@ export class SeleniumService implements OnApplicationBootstrap{
         private readonly tg: TGService
       ) {}
 
-    async onApplicationBootstrap() {
-      try{
-        const data = {
-          theme: 'Конференция',
-          info: 'Новая конференция',
-          date: '14.01.2022',
-          hour: '13',
-          minute: '50',
-          duration: 40,
-          emailNumberArray: ['prokinvs@gmail.com','vp@voipnotes.ru']
-        };
-        const driver = await this.getDriver();
-        this.addConference(driver,data);
-      }catch(e){
-        console.log(e)
-      }
-
-    }
 
     public async getDriver(){
       try{
@@ -84,14 +66,14 @@ export class SeleniumService implements OnApplicationBootstrap{
     public async deleteConference(driver: any, theme: string) {
       try {
           //await driver.sleep(5000);
-          await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences/list`);
+          await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences/schedule`);
           //await driver.findElement(By.id('btnNewConference')).click();
           await driver.sleep(5000);
           await driver.findElement(By.xpath("//input[@placeholder='Поиск ...']")).click();
           await driver.findElement(By.xpath("//input[@placeholder='Поиск ...']")).sendKeys(theme);
           await driver.sleep(10000);
-          await driver.findElement(By.xpath(`//*[contains(text(), ' ${theme} ')]//parent::tr[1]//parent::tbody//parent::table//parent::meeting-list-item//parent::a[@routerlinkactive='selected']`)).click();
-      await driver.sleep(10000);
+          await driver.findElement(By.xpath(`//*[contains(text(), ' ${theme} ')]//parent::meeting-list-item`)).click();
+          await driver.sleep(10000);
           await driver.findElement(By.id("btnDeleteConference")).click();
           await driver.sleep(1000);
           await driver.findElement(By.id("btnOk")).click();
@@ -107,12 +89,14 @@ export class SeleniumService implements OnApplicationBootstrap{
     public async addConference(driver:any, data: any) {
       try {
           const { theme, info, date, hour, minute, duration, emailNumberArray } = data;
-          await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences/new`);
+          await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences`);
           await driver.sleep(5000);
+          
+          await driver.findElement(By.id('btnNewConference')).click();
   
-          const radioSchedule = await driver.findElement(By.xpath("//input[@id='radioSchedule']/following::i"))
-          radioSchedule.click();
-  
+
+          await driver.findElement(By.xpath("//input[@id='radioSchedule']/following::i")).click();
+
           //Очистка и внесение даты конференции
           await driver.sleep(5000);
           await driver.findElement(By.id('dateInput')).clear();
@@ -120,14 +104,14 @@ export class SeleniumService implements OnApplicationBootstrap{
           await driver.sleep(5000);
   
           // Очистка часа и занесение нового времени конференции. При удаление класса form-group, класс меняется form-group has-error
-          await driver.findElement(By.xpath("//td[@class='form-group']/input")).click();
-          await driver.findElement(By.xpath("//td[@class='form-group']/input")).clear();
-          await driver.findElement(By.xpath("//td[@class='form-group has-error']/input")).sendKeys(hour);
+          await driver.findElement(By.xpath("//input[@aria-label='hours']")).click();
+          await driver.findElement(By.xpath("//input[@aria-label='hours']")).clear();
+          await driver.findElement(By.xpath("//input[@aria-label='hours']")).sendKeys(hour);
   
           // Очистка минуты и занесение нового времени конференции. При удаление класса form-group ng-star-inserted, класс меняется form-group ng-star-inserted has-error
-          await driver.findElement(By.xpath("//td[@class='form-group ng-star-inserted']/input")).click();
-          await driver.findElement(By.xpath("//td[@class='form-group ng-star-inserted']/input")).clear();
-          await driver.findElement(By.xpath("//td[@class='form-group ng-star-inserted has-error']/input")).sendKeys(minute);
+          await driver.findElement(By.xpath("//input[@aria-label='minutes']")).click();
+          await driver.findElement(By.xpath("//input[@aria-label='minutes']")).clear();
+          await driver.findElement(By.xpath("//input[@aria-label='minutes']")).sendKeys(minute);
   
   
           // Очистка длительности корнференции
@@ -151,7 +135,7 @@ export class SeleniumService implements OnApplicationBootstrap{
           for (let item in emailNumberArray) {
               await driver.findElement(By.xpath("//app-sexy-search[@name='searchByNumberInput']/input[@placeholder='Поиск']")).sendKeys(emailNumberArray[item]);
               await driver.sleep(5000);
-              await driver.findElement(By.xpath("(//find-contact)[2]/div/div/button")).click()
+              await driver.findElement(By.xpath("(//find-contact)[1]/div/div/button")).click()
               await driver.sleep(2000);
           }
           await driver.findElement(By.id("btnSave")).click();
@@ -161,12 +145,10 @@ export class SeleniumService implements OnApplicationBootstrap{
           await this.searchConference(driver, theme);
   
           //Получение уникального ID конференции
-          const confId = await driver.findElement(By.xpath("//*[@id='app-container']/ng-component/meeting-layout/div/div[2]/ng-component/div/div[2]/conference-preview/div/div/table/tbody/tr[3]/td[2]/p")).getText();
+          const confId = await driver.findElement(By.xpath('//*[@id="app-container"]/ng-component/meeting-layout/div/ng-component/div/div[2]/conference-preview/div/div/table/tbody/tr[3]/td[2]/p')).getText();
           await driver.sleep(2000);
+          console.log(confId)
           return confId;
-  
-  
-  
       } catch (e) {
           this.log.error(`Ошибка добавление конференции на 3СХ ${JSON.stringify(e)}`);
           this.tg.tgAlert(`Ошибка добавление конференции на 3СХ addConference`);
@@ -174,12 +156,12 @@ export class SeleniumService implements OnApplicationBootstrap{
   }
   public async  searchConference(driver: any, theme: string) {
     try {
-        await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences/list`);
+        await driver.get(`https://${this.configService.get('Pbx3CX.url')}/webclient/#/conferences/schedule`);
         await driver.sleep(5000);
         await driver.findElement(By.xpath("//input[@placeholder='Поиск ...']")).click();
         await driver.findElement(By.xpath("//input[@placeholder='Поиск ...']")).sendKeys(theme);
         await driver.sleep(10000);
-        await driver.findElement(By.xpath(`//*[contains(text(), ' ${theme} ')]//parent::tr[1]//parent::tbody//parent::table//parent::meeting-list-item//parent::a[@routerlinkactive='selected']`)).click();
+        await driver.findElement(By.xpath(`//*[contains(text(), '${theme} ')]//parent::meeting-list-item`)).click();
     } catch (e) {
       this.log.error(`Ошибка поиска конференции на 3СХ ${JSON.stringify(e)}`);
       this.tg.tgAlert(`Ошибка поиска конференции на 3СХ searchConference`);
