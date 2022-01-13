@@ -42,7 +42,7 @@ export interface GetTokenResponse extends SimpleKerioData {
 }
 
 export interface GetConferenceListResponse {
-       list: ConferenceList | []
+       list: ConferenceList[] | []
 }
 
 export interface ConferenceList {

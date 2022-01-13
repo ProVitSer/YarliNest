@@ -61,7 +61,7 @@ export class LowdbService {
       }
     }
 
-    public async deleteTheme( theme: string,collection: string ): Promise<any> {
+    public async deleteConference( theme: string,collection: string ): Promise<any> {
       try {
         this.log.info(`Удаляем  ${theme} из коллекции ${collection}`);
   

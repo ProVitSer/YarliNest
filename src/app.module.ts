@@ -8,10 +8,11 @@ import { KerioModule } from './kerio/kerio.module';
 import { SyncDataModule } from './sync-data/sync-data.module';
 import { LowdbModule } from './lowdb/lowdb.module';
 import { SeleniumModule } from './selenium/selenium.module';
+import { ConferenceServiceModule } from './conference-service/conference-service.module';
 import configuration from '@app/config/config.provides';
 
 @Module({
-  imports: [ConfigModule.forRoot({ load: [configuration] }),TGModule, LoggerModule, KerioModule, SyncDataModule, LowdbModule, SeleniumModule],
+  imports: [ConfigModule.forRoot({ load: [configuration] }),TGModule, LoggerModule, KerioModule, SyncDataModule, LowdbModule, SeleniumModule, ConferenceServiceModule],
   controllers: [AppController],
   providers: [AppService],
   exports: [ConfigModule]

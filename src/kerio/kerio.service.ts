@@ -51,7 +51,7 @@ export class KerioService {
 
     }
 
-    private async getConferenceList(startDate: string, endDate: string){//: Promise<getConferenceListResponse | []> {
+    public async getConferenceList(startDate: string, endDate: string): Promise<any>{//: Promise<getConferenceListResponse | []> {
       // const { token, cookie} = await this.getAuthToken();
       const conferenceInfo: GetConferenceListRequest = {
         "jsonrpc": "2.0",
