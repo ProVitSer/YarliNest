@@ -3,7 +3,8 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "assets": [
-      {"include": "../src/config/*.json", "outDir": "./dist/"}
+      {"include": "../src/config/*.json", "outDir": "./dist/"},
+      {"include": "../src/config/*.js", "outDir": "./dist/"}
     ]
   }
 }

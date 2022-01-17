@@ -1,0 +1,1 @@
+export const DATA_FORMAT = 'YYYYMMDDTHHmmss+0300'
