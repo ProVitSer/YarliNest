@@ -23,13 +23,13 @@ export class HttpService {
         return {
             uri: `${host}${path}`,
             headers: addHeaders || {},
-            resolveWithFullResponse: true,
             body: data,
-            ...(typeof data === 'object' ? { json: true } : {}),   
+            ...(typeof data === 'object' ? { json: true } : {}),  
+            json: true, 
         }
     }
 
-    public async request(): Promise<Object> {
+    public async request(): Promise<any> {
         const result =  await this._sendRestRequest();
         
         return result;
