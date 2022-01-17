@@ -158,7 +158,7 @@ export class KerioService {
 
     private getRequest(metod: RequestMethodType,  data: Object = {}, cookie: string = '', token: string = ''): HttpService{
       const config = this.getRequestConfig(metod, cookie, token)
-      return new HttpService(config,{});
+      return new HttpService(config, data);
 
     }
 
