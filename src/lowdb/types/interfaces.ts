@@ -1,5 +1,5 @@
 export interface DBConference {
-    id: string,
+    id?: string,
     theme: string,
     organizer: string,
     fioOrganizer: string,
