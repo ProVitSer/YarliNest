@@ -55,7 +55,7 @@ export interface ConferenceList {
    categories: Array<string>,
    start: string,
    end: string,
-   attendees: ConferenceAttendees
+   attendees: ConferenceAttendees[]
 
 }
 export interface ConferenceAttendees {
@@ -88,7 +88,7 @@ export interface GetPhonebookResponse {
     titleBefore: string,
     titleAfter: string,
     nickName: string,
-    phoneNumbers: Array<string>,
+    phoneNumbers: PhoneNumbersList[],
     emailAddresses: EmailAddressesList[],
     postalAddresses: Array<string>,
     urls: Array<string>,
@@ -105,6 +105,11 @@ export interface GetPhonebookResponse {
     categories: Array<string>
     certSourceId: string,
     isGalContact: boolean    
+}
+
+export interface PhoneNumbersList {
+    type: string,
+    number: string,
 }
 
 export interface EmailAddressesList {
