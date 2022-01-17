@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@app/http/http.service'
 import { RequestConfigInterface, RequestMethodType } from '@app/http/interfaces';
 import { ConfigService } from '@nestjs/config';
-import { GetConferenceListRequest, GetConferenceListResponse, GetPhonebookRequest, GetTokenRequest, GetTokenResponse } from './types/interfaces';
+import { GetConferenceListRequest, GetConferenceListResponse, GetPhonebookRequest, GetPhonebookResponse, GetTokenRequest, GetTokenResponse } from './types/interfaces';
 import { LoggerService } from '@app/logger/logger.service';
 import { TGService } from '@app/telegram/telegram.service';
 
@@ -15,7 +15,7 @@ export class KerioService {
     ){}
 
 
-    private async getAuthToken(){//: Promise<getTokenResponse | string> {
+    private async getAuthToken(): Promise<GetTokenResponse> {
 
       const json: GetTokenRequest = {
         "jsonrpc": "2.0",
@@ -35,15 +35,19 @@ export class KerioService {
       try{
         const api = this.getRequest(RequestMethodType.get);
         const response =  await api.request();
-        // if (!response) {
-        //   this.log.info(`Отсутствует результат на запрос токена ${JSON.stringify(response)}`);
-        //   this.tg.tgAlert(`Ошибка получения токена getToken`);
-        //   return '';
-        // };
-
-        // const token = response.data.result.token;
-        // const cookie = response.headers['set-cookie'];
-        console.log(response)
+        
+        if (!response) {
+          this.log.info(`Отсутствует результат на запрос токена ${JSON.stringify(response)}`);
+          this.tg.tgAlert(`Ошибка получения токена getToken`);
+          throw `Отсутствует результат на запрос токена ${JSON.stringify(response)}`;
+        };
+        
+        const result = {
+          token: response.body.result.token,
+          cookie: response.headers['set-cookie']
+        };
+        
+        return result as GetTokenResponse;  
       } catch(e){
         this.log.error(e);
         this.tg.tgAlert('Ошибка получения токена getToken')
@@ -51,8 +55,8 @@ export class KerioService {
 
     }
 
-    public async getConferenceList(startDate: string, endDate: string): Promise<any>{//: Promise<getConferenceListResponse | []> {
-      // const { token, cookie} = await this.getAuthToken();
+    public async getConferenceList(startDate: string, endDate: string): Promise<GetConferenceListResponse | []> {
+      const { token, cookie } = await this.getAuthToken();
       const conferenceInfo: GetConferenceListRequest = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -95,17 +99,15 @@ export class KerioService {
       }
 
       try{
-        const api = this.getRequest(RequestMethodType.get, /*token, cookie*/);
+        const api = this.getRequest(RequestMethodType.post, conferenceInfo, cookie, token);
         const response =  await api.request();
-
         
-        // if (response.data.result.totalItems == 0) {
-        //   this.log.info(`Отсутствует результат на запрос списка конференций ${util.inspect(result)}`);
-        //   return [];
-        // }
-        // this.log.info(`Получены данные со списком конференций ${util.inspect(result.data.result)}`);
-        // return response.data.result;
-        console.log(response)
+        if (response.body.result.totalItems == 0) {
+          this.log.info(`Отсутствует результат на запрос списка конференций ${JSON.stringify(response.body.result)}`);
+          return [];
+        }
+        this.log.info(`Получены данные со списком конференций ${JSON.stringify(response.body.result)}`);
+        return response.body.result;
       } catch(e){
         this.log.error(`Ошибка запроса списка конференций ${JSON.stringify(e)}`);
         this.tg.tgAlert('Ошибка запроса списка конференций getConferenceList')
@@ -115,7 +117,8 @@ export class KerioService {
     }
 
 
-    private async getPhonebook(userLimit: number){
+    private async getPhonebook(userLimit: number): Promise<GetPhonebookResponse[]>{
+      const { token,cookie } = await this.getAuthToken();
       const phonebookInfo: GetPhonebookRequest = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -130,10 +133,9 @@ export class KerioService {
       }
 
       try{
-        const api = this.getRequest(RequestMethodType.get, /*token, cookie*/);
+        const api = this.getRequest(RequestMethodType.get, phonebookInfo, cookie, token);
         const response =  await api.request();
-        // return response.data.result.list;
-        console.log(response)
+        return response.body.result.list;
       } catch(e){
         this.log.error(`Ошибка запроса списка телефонной книги ${JSON.stringify(e)}`);
         this.tg.tgAlert('Ошибка запроса списка телефонной книги getPhonebook')
@@ -154,10 +156,12 @@ export class KerioService {
       };
   }
 
-    private getRequest(metod: RequestMethodType, cookie: string = '', token: string = ''): HttpService{
+    private getRequest(metod: RequestMethodType,  data: Object = {}, cookie: string = '', token: string = ''): HttpService{
       const config = this.getRequestConfig(metod, cookie, token)
       return new HttpService(config,{});
 
     }
 
 }
+
+// {"list":[{"access":"EAccessCreator","summary":"Новое событие","location":"Telephone-meeting","description":"79104061420","categories":[],"start":"20220117T140000+0300","end":"20220117T150000+0300","attendees":[{"displayName":"","emailAddress":"meeting@yarli.ru","role":"RoleOrganizer","isNotified":false,"partStatus":"PartAccepted"},{"displayName":"Виталий Прокин","emailAddress":"v.prokin@yarli.ru","role":"RoleRequiredAttendee","isNotified":true,"partStatus":"PartNotResponded"},{"displayName":"Telephone-meeting","emailAddress":"Telephone-meeting@yarli.ru","role":"RoleRoom","isNotified":true,"partStatus":"PartAccepted"}]}],"totalItems":1}
