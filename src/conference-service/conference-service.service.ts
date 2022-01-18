@@ -11,6 +11,8 @@ import * as moment from 'moment';
 import { DATA_FORMAT } from "./config";
 import { writeFile, readFile, access } from 'fs/promises'
 import * as path from 'path';
+import * as chrome from 'selenium-webdriver/chrome';
+import { isSharedArrayBuffer } from 'util/types';
 
 export enum ConferenceAlert {
     NEW = '✅Создана новая конференция',
@@ -23,6 +25,7 @@ export interface ConferenceAlertDescription {
 
 @Injectable()
 export class ConferenceService {
+    private driver: chrome.Driver
 
     constructor(
         private readonly configService: ConfigService,
@@ -33,26 +36,34 @@ export class ConferenceService {
         private readonly selenium: SeleniumService
     ){}
 
-    public async startCreateConference(driver: any): Promise<any>{
+    public async startCreateConference(): Promise<any>{
         try {
             const startDate = moment().format(DATA_FORMAT);
             const endDate = moment().add(this.configService.get('conference.days'), 'days').format(DATA_FORMAT);
             const kerioConferenceList = await this.kerio.getConferenceList(startDate, endDate) as ConferenceList[];
             const lowdbConferenceList = await this.lowdb.findAll('conference') as DBConference[];
+            this.driver = await this.selenium.getDriver();
 
             if(kerioConferenceList.length != 0){
                 const formatKerioConfList = await this.formatKerioConference(kerioConferenceList);
-                await this.deleteNoUseConference(driver, formatKerioConfList, lowdbConferenceList);
-                return await Promise.all( formatKerioConfList.map( async (conference: DBConference) =>{
-                    await this.addConference(driver, conference);
+                await this.deleteNoUseConference(this.driver , formatKerioConfList, lowdbConferenceList);
+                await Promise.all( formatKerioConfList.map( async (conference: DBConference) =>{
+                    await this.addConference(this.driver , conference);
 
                 }))
+
             } else {
-                return;
+                const deteleConf = lowdbConferenceList.filter((dbConf: DBConference) => { return dbConf.theme !==  "Тест Тестович"});
+                await this.deleteConference(this.driver,deteleConf);
             }
+            await this.driver.close();
+            await this.driver.quit(); //Выходим из браузера
+            return;
         }catch(e){
             this.log.error(e);
             this.tg.tgAlert(`Ошибка старта получения информации и изменения конференции ${e}`)
+            await this.driver.close();
+            await this.driver.quit(); //Выходим из браузера
         }
     }
 
@@ -64,7 +75,7 @@ export class ConferenceService {
                 diffEmailConferenceUser = await this.getDiffEmailConferenceUser(resultSearchInDB, kerioConfList.emailNumberArray);
             }
     
-            this.log.info('diffEmailConferenceUSer',diffEmailConferenceUser)
+            this.log.info(`diffEmailConferenceUser ${diffEmailConferenceUser}`)
             //Проверяем существует конференция в БД или нет
             if (resultSearchInDB == undefined) { //Конференции в БД нет, создаем новую конференцию
                 await this.selenium.login(driver, kerioConfList.organizer); //Авторизуемся в интерфейсе 3сх под ответственным пользователем 
@@ -160,12 +171,12 @@ export class ConferenceService {
     }
 
     private async getPhonebook(){
-        return await readFile(path.join(__dirname, this.configService.get('conference.phonebookPath')));
+        const phonebook =  await readFile(path.join(__dirname, this.configService.get('conference.phonebookPath')));
+		return JSON.parse(phonebook.toString());
     }
 
     private async getDiffEmailConferenceUser(dbConf:DBConference, kerioEmailNumberArray: Array<string> ){
-        
-        const diffEmailConferenceUSer = await new Promise((resolve,rejects) => {
+        return await new Promise((resolve,rejects) => {
             let conferenceUser;
             const diff = function (dbEmailArray, kerioEmailArray) {
                 return dbEmailArray.filter(email => !kerioEmailArray.includes(email))

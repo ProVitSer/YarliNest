@@ -16,7 +16,7 @@ export class TGService {
       ) {}
 
     public async tgConfAlert(conferenceAlert: ConferenceAlertDescription, data: DBConference){
-        const alert = `${conferenceAlert.alert} \nНазвание конференции: ${data.theme}\nОрганизатор: ${data.fioOrganizer}\nДата начала: ${data.date}\nВремя начала: ${data.hour}:${data.minute}\nПродолжительность: ${data.duration}\nПримечания: ${data.info}\nУчастники: ${data.fio}\n`;
+        const alert = `${conferenceAlert.alert} ID ${data.id} \nНазвание конференции: ${data.theme}\nОрганизатор: ${data.fioOrganizer}\nДата начала: ${data.date}\nВремя начала: ${data.hour}:${data.minute}\nПродолжительность: ${data.duration}\nПримечания: ${data.info}\nУчастники: ${data.fio}\n`;
         this.tgAlert(alert)
 
     }  

@@ -20,14 +20,9 @@ export class SeleniumService {
     public async getDriver(){
       try{
         let chromeCapabilities = webdriver.Capabilities.chrome()
-        let chromeOptions = {
-          acceptSslCerts: true,
-          acceptInsecureCerts: true,
-          excludeSwitches: ['--enable-automation'],
-          ignoreDefaultArgs: ["--enable-automation"],
-          useAutomationExtension: false,
-        };
-        return await new webdriver.Builder().forBrowser('chrome').setChromeOptions(chromeOptions).withCapabilities(chromeCapabilities).build();
+        let options: chrome.Options = new chrome.Options();
+        options = options.excludeSwitches('--enable-automation')
+        return await new webdriver.Builder().forBrowser('chrome').setChromeOptions(options).withCapabilities(chromeCapabilities).build();
       } catch(e){
         console.log(e)
       }
