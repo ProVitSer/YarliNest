@@ -53,6 +53,19 @@ export class LowdbService {
       }
     }
 
+    public async findByTheme( theme: string, collection: string ): Promise<any> {
+      try{
+        this.log.info(`Производим поиск ${theme} в  ${collection}`);
+  
+        const values: Array<any> = await this.findAll(collection);
+        const valueFound = values.find(obj => obj.theme === theme)
+        return valueFound;
+  
+      }catch(e){
+        this.log.error(`LowDB findById error: ${e}`);
+      }
+    }
+
     public async findAll( collection: string ): Promise<any> {
       try{
         return await this.db.get(collection).value()

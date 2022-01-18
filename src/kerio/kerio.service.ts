@@ -117,7 +117,7 @@ export class KerioService {
     }
 
 
-    private async getPhonebook(userLimit: number): Promise<GetPhonebookResponse[]>{
+    public async getPhonebook(userLimit: number): Promise<GetPhonebookResponse[]>{
       const { token,cookie } = await this.getAuthToken();
       const phonebookInfo: GetPhonebookRequest = {
         "jsonrpc": "2.0",
@@ -164,4 +164,3 @@ export class KerioService {
 
 }
 
-// {"list":[{"access":"EAccessCreator","summary":"Новое событие","location":"Telephone-meeting","description":"79104061420","categories":[],"start":"20220117T140000+0300","end":"20220117T150000+0300","attendees":[{"displayName":"","emailAddress":"meeting@yarli.ru","role":"RoleOrganizer","isNotified":false,"partStatus":"PartAccepted"},{"displayName":"Виталий Прокин","emailAddress":"v.prokin@yarli.ru","role":"RoleRequiredAttendee","isNotified":true,"partStatus":"PartNotResponded"},{"displayName":"Telephone-meeting","emailAddress":"Telephone-meeting@yarli.ru","role":"RoleRoom","isNotified":true,"partStatus":"PartAccepted"}]}],"totalItems":1}
