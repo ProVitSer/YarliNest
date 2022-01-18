@@ -33,7 +33,7 @@ export class KerioService {
       };
 
       try{
-        const api = this.getRequest(RequestMethodType.get);
+        const api = this.getRequest(RequestMethodType.get, json);
         const response =  await api.request();
         
         if (!response) {
@@ -107,7 +107,7 @@ export class KerioService {
           return [];
         }
         this.log.info(`Получены данные со списком конференций ${JSON.stringify(response.body.result)}`);
-        return response.body.result;
+        return response.body.result.list;
       } catch(e){
         this.log.error(`Ошибка запроса списка конференций ${JSON.stringify(e)}`);
         this.tg.tgAlert('Ошибка запроса списка конференций getConferenceList')

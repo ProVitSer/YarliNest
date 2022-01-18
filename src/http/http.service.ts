@@ -25,6 +25,7 @@ export class HttpService {
             headers: addHeaders || {},
             body: data,
             ...(typeof data === 'object' ? { json: true } : {}),  
+            resolveWithFullResponse: true,
             json: true, 
         }
     }

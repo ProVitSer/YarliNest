@@ -29,8 +29,7 @@ export class SyncDataService {
     async syncConferenceByKerioCalendar(){
         if(this.isConfCreateEnd === true){
             this.isConfCreateEnd = false;
-            const driver = await this.selenium.getDriver();
-            await this.conference.startCreateConference(driver);
+            await this.conference.startCreateConference();
             this.isConfCreateEnd = true
         }
         return;
