@@ -12,6 +12,14 @@ import { DATA_FORMAT } from "./config";
 import { writeFile, readFile, access } from 'fs/promises'
 import * as path from 'path';
 
+export enum ConferenceAlert {
+    NEW = '✅Создана новая конференция',
+    DELETE = '❌Удалена измененная конференция'
+}
+
+export interface ConferenceAlertDescription {
+    alert: ConferenceAlert
+}
 
 @Injectable()
 export class ConferenceService {
@@ -36,7 +44,7 @@ export class ConferenceService {
                 const formatKerioConfList = await this.formatKerioConference(kerioConferenceList);
                 await this.deleteNoUseConference(driver, formatKerioConfList, lowdbConferenceList);
                 return await Promise.all( formatKerioConfList.map( async (conference: DBConference) =>{
-                    await this.addConference(conference);
+                    await this.addConference(driver, conference);
 
                 }))
             } else {
@@ -48,13 +56,41 @@ export class ConferenceService {
         }
     }
 
-    private async addConference(kerioConfList: DBConference){
-        let diffEmailConferenceUser;
-        const resultSearchInDB = await this.lowdb.findByTheme(kerioConfList.theme, 'conference');
-        if(resultSearchInDB){
-            diffEmailConferenceUser = await this.getDiffEmailConferenceUser(resultSearchInDB, kerioConfList.emailNumberArray);
+    private async addConference(driver: any, kerioConfList: DBConference){
+        try {
+            let diffEmailConferenceUser;
+            const resultSearchInDB = await this.lowdb.findByTheme(kerioConfList.theme, 'conference');
+            if(resultSearchInDB){
+                diffEmailConferenceUser = await this.getDiffEmailConferenceUser(resultSearchInDB, kerioConfList.emailNumberArray);
+            }
+    
+            this.log.info('diffEmailConferenceUSer',diffEmailConferenceUser)
+            //Проверяем существует конференция в БД или нет
+            if (resultSearchInDB == undefined) { //Конференции в БД нет, создаем новую конференцию
+                await this.selenium.login(driver, kerioConfList.organizer); //Авторизуемся в интерфейсе 3сх под ответственным пользователем 
+                kerioConfList.id = await this.selenium.addConference(driver, kerioConfList); // Добавляем новую конференцию
+                await this.tg.tgConfAlert({ alert: ConferenceAlert.NEW },kerioConfList); //Уведомляем к группу о создание новой конференции
+                await this.lowdb.insert(kerioConfList, 'conference'); //Добавляем в БД информациюо новой конференции
+                await this.selenium.logout(driver); //Выходим изинтерфейса 3CX
+                return '';
+            } else if (resultSearchInDB.theme == kerioConfList.theme && resultSearchInDB.date == kerioConfList.date && resultSearchInDB.hour == `${kerioConfList.hour}` && resultSearchInDB.minute == `${kerioConfList.minute}` && diffEmailConferenceUser.length == 0) { //Конференция уже существует и не требует изменений
+                this.log.info(`По ${kerioConfList.theme} нет изменений`);
+            } else {//Конференция существует, но не совпадает время или дата (пользователь поменял данные). Удаляем и пересоздаем
+                await this.selenium.login(driver, kerioConfList.organizer); //Авторизуемся в интерфейсе 3сх под ответственным пользователем 
+                await this.tg.tgConfAlert({ alert: ConferenceAlert.DELETE },resultSearchInDB); //Уведомляем к группу о создание новой конференции
+                await this.selenium.deleteConference(driver, resultSearchInDB.theme); //Удаляем конференцию в интерфейсе 3СХ
+                await this.lowdb.deleteConference(resultSearchInDB.theme, 'conference'); //Удаляем конференцию из БД
+                kerioConfList.id = await this.selenium.addConference(driver, kerioConfList); //Добавляем новую конференцию, так как были изменение
+                await this.tg.tgConfAlert({ alert: ConferenceAlert.NEW },kerioConfList); //Уведомляем к группу о создание новой конференции
+                await this.lowdb.insert(kerioConfList, 'conference'); //Добавляем в БД информациюо новой конференции
+                await this.selenium.logout(driver); //Выходим изинтерфейса 3CX
+                return '';
+            }
+        } catch(e){
+            this.log.error(e);
+            this.tg.tgAlert(`Ошибка изменений конференций modifyConf`)
         }
-        
+
     }
 
     private async deleteNoUseConference(driver: any, kerioConfs: DBConference[], dbConfs: DBConference[]): Promise<void> {
@@ -141,4 +177,3 @@ export class ConferenceService {
         });
     }
 }      
-// {"list":[{"access":"EAccessCreator","summary":"Новое событие","location":"Telephone-meeting","description":"79104061420","categories":[],"start":"20220117T140000+0300","end":"20220117T150000+0300","attendees":[{"displayName":"","emailAddress":"meeting@yarli.ru","role":"RoleOrganizer","isNotified":false,"partStatus":"PartAccepted"},{"displayName":"Виталий Прокин","emailAddress":"v.prokin@yarli.ru","role":"RoleRequiredAttendee","isNotified":true,"partStatus":"PartNotResponded"},{"displayName":"Telephone-meeting","emailAddress":"Telephone-meeting@yarli.ru","role":"RoleRoom","isNotified":true,"partStatus":"PartAccepted"}]}],"totalItems":1}
