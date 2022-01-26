@@ -45,7 +45,8 @@ export class SyncDataService {
                 delete acc[item.email].email
                 return acc;
             }, {});
-            await writeFile('../dist/config/phonebook.json', newPhonebooks);
+            await writeFile('./dist/config/phonebook.json', JSON.stringify(newPhonebooks));
+            await writeFile('./src/config/phonebook.json', JSON.stringify(newPhonebooks));
             this.tg.tgAlert(`Синхронизация контактной книги прошла успешно`)
         }catch(e){
             this.log.error(JSON.stringify(e));
